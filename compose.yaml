@@ -1,0 +1,53 @@
+version: '3.9'
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION}
+    # build:
+    #   context: .
+    #   dockerfile: keycloak.Dockerfile
+    restart: always
+    environment:
+      # KC_DB_URL: til_keycloak
+      KC_DB_URL_HOST: kc_database
+      KC_DB_URL_PORT: 5432
+      # KC_HOSTNAME_STRICT: false
+
+      KC_DB: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: dbpassword
+
+      # KC_HOSTNAME: localhost
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: adminpassword
+
+      # JAVA_OPTS: -Djboss.bind.address.private=127.0.0.1 -Djboss.bind.address=0.0.0.0
+    depends_on:
+      - kc_database
+    ports:
+      - "${PORT_KEYCLOAK}:8080"
+    command: ["-v", "start", "--cache=ispn"]
+    networks:
+      - local-keycloak
+
+  kc_database:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRESQL_DB}
+      POSTGRES_USER: ${POSTGRESQL_USER}
+      POSTGRES_PASSWORD: ${POSTGRESQL_PASS}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - kc_pgdata:/var/lib/postgresql/data
+    networks:
+      - local-keycloak
+
+volumes:
+  kc_pgdata:
+    name: kc_pgdata
+
+networks:
+  local-keycloak:
